@@ -33,22 +33,14 @@
  
 set(CFE_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(CFE_DOCS_DIR ${CFE_DIR}/docs)
-set(CFE_FSW ${CFE_DIR}/fsw)
-set(CFE_CORE_SRC ${CFE_FSW}/src)
+set(CFE_FSW_BASE ${CFE_DIR}/fsw)
 set(CFE_TOOLS ${CFE_DIR}/tools)
-set(CFE_UNIT_TEST ${CFE_FSW}/unit-test)
 set(CFE_CMDR_PLUGIN_DIR ${PROJECT_SOURCE_DIR}/core/cdr)
 set(CFE_MSG_OVERRIDES ${CMAKE_CURRENT_LIST_DIR}/cfe_msg_overrides.json)
- 
+
 set(CFE_INC_DIRS
-    ${CFE_CORE_SRC}/inc
-    ${CFE_CORE_SRC}/inc/private
-    ${CFE_CORE_SRC}/es
-    ${CFE_CORE_SRC}/evs
-    ${CFE_CORE_SRC}/fs
-    ${CFE_CORE_SRC}/sb
-    ${CFE_CORE_SRC}/tbl
-    ${CFE_CORE_SRC}/time
+    ${CFE_FSW_BASE}/inc
+    ${CFE_FSW_BASE}/inc/private
 )
 
 

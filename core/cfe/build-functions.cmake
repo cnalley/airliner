@@ -54,6 +54,27 @@ function(initialize_airliner_build)
     # Define the function arguments.
     cmake_parse_arguments(PARSED_ARGS "" "CORE_BINARY;PREFIX;PSP;OSAL;STARTUP_SCRIPT;UNIT_TEST_WRAPPER;CORE_TOOLS" "CONFIG;FILESYS" ${ARGN})
     
+    include(${PARSED_ARGS_PSP}/make/build-vars.cmake)
+    
+    if(EXISTS ${PROJECT_SOURCE_DIR}/core/cfe/fsw/${BUILD_CORE_FROM_SOURCE}/set-paths.cmake)
+        include(${PROJECT_SOURCE_DIR}/core/cfe/fsw/${BUILD_CORE_FROM_SOURCE}/set-paths.cmake)
+    else()
+        # Use the NASA version of CFE anyway, to get the includes.
+        set(CFE_FSW ${CFE_FSW_BASE}/nasa)
+        set(CFE_CORE_SRC ${CFE_FSW}/src)
+        set(CFE_UNIT_TEST ${CFE_FSW}/unit-test)
+        
+        set(CFE_INC_DIRS
+            ${CFE_INC_DIRS}
+            ${CFE_CORE_SRC}/es
+            ${CFE_CORE_SRC}/evs
+            ${CFE_CORE_SRC}/fs
+            ${CFE_CORE_SRC}/sb
+            ${CFE_CORE_SRC}/tbl
+            ${CFE_CORE_SRC}/time
+        )
+    endif()
+    
     # Reset the global variables that are only global to a CFS build.
     set_property(GLOBAL PROPERTY PUBLIC_APP_INCLUDES_PROPERTY "")
     set_property(GLOBAL PROPERTY AIRLINER_BUILD_PREFIX_PROPERTY ${PARSED_ARGS_PREFIX})
@@ -79,23 +100,22 @@ function(initialize_airliner_build)
     
     define_property(TARGET PROPERTY APP_CONFIG_SRC
         BRIEF_DOCS "Application configuration source files."
-        FULL_DOCS "Application configuration source files.")
-            
+        FULL_DOCS "Application configuration source files.")    
+    
     set(CFS_DOCS_DIR ${CMAKE_BINARY_DIR}/docs)
     set(CFS_DOCS_HTML_DIR ${CFS_DOCS_DIR}/html)
 
     set(CFE_PSP_DIR ${PARSED_ARGS_PSP})
     set(CFE_OSAL_DIR ${PARSED_ARGS_OSAL})
 
-    include(${PARSED_ARGS_PSP}/make/build-vars.cmake)
     include(${PROJECT_SOURCE_DIR}/core/psp/make/build-functions.cmake)
     
     set_global_airliner_includes(${PARSED_ARGS_CONFIG})
     
-    if(${BUILD_CORE_FROM_SOURCE})    
+    if(BUILD_CORE_FROM_SOURCE)
         add_subdirectory(${PARSED_ARGS_PSP}/src psp/platform)
         add_subdirectory(${PSP_SHARED_DIR} psp/shared)
-    
+        
         # Parse the various CFE component CMake files that will specify the various source files.
         add_subdirectory(${CFE_CORE_SRC}/make cfe)
     endif()

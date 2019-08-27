@@ -115,7 +115,7 @@ function(psp_initialize_airliner_build)
 	# Prepare the build to be ready to use the Explain utility.
 	explain_setup()
     
-    if(${BUILD_CORE_FROM_SOURCE})
+    if(BUILD_CORE_FROM_SOURCE)
         # Do the things that we only do when we build the core binary from source.
         
         # Set what we're going to call the executable file.
@@ -624,29 +624,29 @@ function(psp_add_airliner_app_unit_test)
         target_include_directories(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET} PUBLIC ${PROJECT_SOURCE_DIR}/tools/ut_assert/inc/)
         target_include_directories(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-gcov PUBLIC ${PROJECT_SOURCE_DIR}/tools/ut_assert/inc/)
     endif()
-
-	if(PARSED_ARGS_NANOPB)
-		set(NANOPB_SRC 
-		    ${PROJECT_SOURCE_DIR}/tools/nanopb/pb.h
-		    ${PROJECT_SOURCE_DIR}/tools/nanopb/pb_common.c
-			${PROJECT_SOURCE_DIR}/tools/nanopb/pb_common.h
-		    ${PROJECT_SOURCE_DIR}/tools/nanopb/pb_decode.c
-		    ${PROJECT_SOURCE_DIR}/tools/nanopb/pb_decode.h
-		    ${PROJECT_SOURCE_DIR}/tools/nanopb/pb_encode.c
-		    ${PROJECT_SOURCE_DIR}/tools/nanopb/pb_encode.h
-		)
-			
+    
+    if(PARSED_ARGS_NANOPB)
+        set(NANOPB_SRC 
+            ${PROJECT_SOURCE_DIR}/tools/nanopb/pb.h
+            ${PROJECT_SOURCE_DIR}/tools/nanopb/pb_common.c
+            ${PROJECT_SOURCE_DIR}/tools/nanopb/pb_common.h
+            ${PROJECT_SOURCE_DIR}/tools/nanopb/pb_decode.c
+            ${PROJECT_SOURCE_DIR}/tools/nanopb/pb_decode.h
+            ${PROJECT_SOURCE_DIR}/tools/nanopb/pb_encode.c
+            ${PROJECT_SOURCE_DIR}/tools/nanopb/pb_encode.h
+        )
+        
         target_sources(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET} PUBLIC ${NANOPB_SRC})
         target_sources(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-gcov PUBLIC ${NANOPB_SRC})
-
-		target_include_directories(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET} PUBLIC ${PROJECT_SOURCE_DIR}/tools/nanopb/)
-		target_include_directories(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-gcov PUBLIC ${PROJECT_SOURCE_DIR}/tools/nanopb/)
-	endif()
-	
-	if(EXISTS ${PARSED_ARGS_VALGRIND_SUPPRESSION_FILE})
+        
+        target_include_directories(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET} PUBLIC ${PROJECT_SOURCE_DIR}/tools/nanopb/)
+        target_include_directories(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-gcov PUBLIC ${PROJECT_SOURCE_DIR}/tools/nanopb/)
+    endif()
+    
+    if(EXISTS ${PARSED_ARGS_VALGRIND_SUPPRESSION_FILE})
         set(MEMCHECK_COMMAND ${MEMCHECK_COMMAND} --suppressions=${PARSED_ARGS_VALGRIND_SUPPRESSION_FILE})
         set(HELGRIND_COMMAND ${HELGRIND_COMMAND} --suppressions=${PARSED_ARGS_VALGRIND_SUPPRESSION_FILE})
-	endif()
+    endif()
     
     get_property(PUBLIC_APP_INCLUDES GLOBAL PROPERTY PUBLIC_APP_INCLUDES_PROPERTY)
     separate_arguments(PUBLIC_APP_INCLUDES)
@@ -680,23 +680,23 @@ function(psp_add_airliner_app_unit_test)
     add_test(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-ctest-build "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET})
     add_test(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET} ${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET})
     set_tests_properties(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET} PROPERTIES DEPENDS ${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-ctest-build)
-            
+    
     add_test(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-gcov-ctest-build "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-gcov)
     add_test(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-gcov ${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-gcov)
     set_tests_properties(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-gcov PROPERTIES DEPENDS ${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-gcov-ctest-build)
-
+    
     if(NOT PARSED_ARGS_NO_MEMCHECK)
         add_test(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-memcheck-ctest-build "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET})
         add_test(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-memcheck ${MEMCHECK_COMMAND} ${CMAKE_CURRENT_BINARY_DIR}/${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET})
         set_tests_properties(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-memcheck PROPERTIES DEPENDS ${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-memcheck-ctest-build)
     endif()
-
+    
     if(NOT PARSED_ARGS_NO_HELGRIND)
         add_test(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-helgrind-ctest-build "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET})
         add_test(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-helgrind ${HELGRIND_COMMAND} ${CMAKE_CURRENT_BINARY_DIR}/${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET})
         set_tests_properties(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET} PROPERTIES DEPENDS ${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-helgrind-ctest-build)
     endif()
-
+    
     if(NOT PARSED_ARGS_NO_MASSIF)
         add_test(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-massif-ctest-build "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET})
         add_test(${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET}-massif ${MASSIF_COMMAND} ${CMAKE_CURRENT_BINARY_DIR}/${AIRLINER_BUILD_PREFIX}${PARSED_ARGS_TARGET})

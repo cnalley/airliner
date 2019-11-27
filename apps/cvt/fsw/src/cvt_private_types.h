@@ -47,31 +47,31 @@
 extern "C" {
 #endif
 
-/************************************************************************
-** Local Defines
-*************************************************************************/
 
-/************************************************************************
-** Local Structure Declarations
-*************************************************************************/
 
-/* TODO:  Add more private structure definitions here, if necessary. */
+typedef struct
+{
+	char   Name[CVT_CONTAINER_NAME_LENGTH];
+	uint32 Size;
+	uint32 Offset;
+	uint32 UpdateCount;
+	uint32 MutexID;
+} CVT_Registration_t;
 
-/************************************************************************
-** External Global Variables
-*************************************************************************/
 
-/************************************************************************
-** Global Variables
-*************************************************************************/
+typedef struct
+{
+	CVT_Registration_t Registration[CVT_MAX_REGISTRATIONS];
+	uint32             Cursor;
+} CVT_Registry_t;
 
-/************************************************************************
-** Local Variables
-*************************************************************************/
 
-/************************************************************************
-** Local Function Prototypes
-*************************************************************************/
+typedef struct
+{
+	CVT_Registry_t     Registry;
+	uint32             DataStore[CVT_DATA_STORE_SIZE];
+} CVT_DataStoreTable_t;
+
 
 
 #ifdef __cplusplus

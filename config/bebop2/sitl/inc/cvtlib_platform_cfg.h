@@ -7,6 +7,10 @@ extern "C" {
 #endif
 
 
+#define CVT_CONTAINER_NAME_LENGTH 	(40)
+#define CVT_MAX_REGISTRATIONS       (32)
+#define CVT_DATA_STORE_SIZE         (16777216)
+
 
 #ifdef __cplusplus
 }

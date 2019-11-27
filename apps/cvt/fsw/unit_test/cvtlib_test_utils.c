@@ -32,6 +32,7 @@
  *****************************************************************************/
 
 #include "cvtlib_test_utils.h"
+#include "cvt_private_types.h"
 
 #include "ut_cfe_evs_hooks.h"
 #include "ut_cfe_time_stubs.h"
@@ -48,6 +49,8 @@
 
 #include <time.h>
 
+extern CVT_DataStoreTable_t CVT_DataStoreTable;
+
 /*
  * Function Definitions
  */
@@ -56,7 +59,7 @@ void CVTLIB_Test_Setup(void)
 {
     /* initialize test environment to default state for every test */
 
-    //CFE_PSP_MemSet(&CVT_AppData, 0x00, sizeof(CVT_AppData_t));
+    CFE_PSP_MemSet(&CVT_DataStoreTable, 0x00, sizeof(CVT_DataStoreTable));
 
     Ut_CFE_EVS_Reset();
     Ut_CFE_FS_Reset();

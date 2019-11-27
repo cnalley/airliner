@@ -60,6 +60,9 @@ add_airliner_app_def(cvtlib
     SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/cvt_lib.c
    
+    PUBLIC_INCLUDES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../public_inc/
+        
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/
     

@@ -109,8 +109,8 @@ extern "C" {
 */
 #define CVT_STARTUP_TIMEOUT_MSEC    (1000)
 
-/* TODO:  Add Doxygen markup. */
-#define CVT_CUSTOM_DEV_PATH       "/tmp/ttyS0"
+#define CVT_MAX_REGISTRATIONS       (100)
+#define CVT_DATA_STORE_SIZE         (10000000)
 
 
 #ifdef __cplusplus

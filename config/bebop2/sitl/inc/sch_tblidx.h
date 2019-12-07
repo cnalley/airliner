@@ -95,6 +95,9 @@
 #define PRM_SEND_HK_MIDX              96
 #define PRM_WAKEUP_MIDX               97
 
+#define CAMIO_SEND_HK_MIDX            99
+#define CAMIO_ACQUIRE_IMAGE_MIDX     100
+
 #define QAE_SEND_HK_MIDX             102
 #define QAE_WAKEUP_MIDX              103
 #define LD_SEND_HK_MIDX              104

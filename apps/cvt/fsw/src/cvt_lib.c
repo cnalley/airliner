@@ -62,19 +62,25 @@ int32 CVT_LibInit(void)
 
 
 
-int32 CVT_GetContainer(const char *Name, uint32 *Size, CVT_ContainerID_t *ContainerID)
+int32 CVT_GetContainer(uint16 ID, uint32 Size, CVT_ContainerID_t *ContainerID)
 {
 	int32  status = CVT_SUCCESS;
 	uint32 i = 0;
+
+	if(ID == 0)
+	{
+		status = CVT_INVALID_ID;
+		goto end_of_function;
+	}
 
 	/* Try to find the name already registered. */
 	for(i = 0; i < CVT_MAX_REGISTRATIONS; ++i)
 	{
 		/* Is this entry the same name? */
-		if(strncmp(Name, CVT_DataStoreTable.Registry.Registration[i].Name, sizeof(CVT_DataStoreTable.Registry.Registration[i].Name)) == 0)
+		if(ID == CVT_DataStoreTable.Registry.Registration[i].ID)
 		{
 			/* It is the same name.  Is the registered size the same size? */
-			if(*Size != CVT_DataStoreTable.Registry.Registration[i].Size)
+			if(Size != CVT_DataStoreTable.Registry.Registration[i].Size)
 			{
 				/* This is not the correct size. */
 				status = CVT_INCORRECT_SIZE;
@@ -97,13 +103,13 @@ int32 CVT_GetContainer(const char *Name, uint32 *Size, CVT_ContainerID_t *Contai
 		if(0 == CVT_DataStoreTable.Registry.Registration[i].Size)
 		{
 			/* This is empty.  Do we have enough room to allocate from the data store? */
-			if(CVT_DataStoreTable.Registry.Cursor + *Size <= CVT_DATA_STORE_SIZE)
+			if(CVT_DataStoreTable.Registry.Cursor + Size <= CVT_DATA_STORE_SIZE)
 			{
 				char semName[15];
 
 				/* Yes.  Now allocate space by setting the offset and moving the cursor. */
 				CVT_DataStoreTable.Registry.Registration[i].Offset = CVT_DataStoreTable.Registry.Cursor;
-				CVT_DataStoreTable.Registry.Cursor += *Size;
+				CVT_DataStoreTable.Registry.Cursor += Size;
 
 				/* Create mutex. */
 				sprintf(semName, "CVT_%u", i);
@@ -128,10 +134,9 @@ int32 CVT_GetContainer(const char *Name, uint32 *Size, CVT_ContainerID_t *Contai
 		goto end_of_function;
 	}
 
-
 	/* Now store the name and size. */
-	strncpy(CVT_DataStoreTable.Registry.Registration[i].Name, Name, sizeof(CVT_DataStoreTable.Registry.Registration[i].Name));
-	CVT_DataStoreTable.Registry.Registration[i].Size = *Size;
+	CVT_DataStoreTable.Registry.Registration[i].ID = ID;
+	CVT_DataStoreTable.Registry.Registration[i].Size = Size;
 	*ContainerID = i;
 	status = CVT_SUCCESS;
 
@@ -142,7 +147,7 @@ end_of_function:
 
 
 
-int32 CVT_GetBuffer(const CVT_ContainerID_t ContainerID, uint32 *UpdateCount, void* Buffer, uint32 *Size)
+int32 CVT_GetContent(const CVT_ContainerID_t ContainerID, uint32 *UpdateCount, void* Buffer, uint32 *Size)
 {
 	int32  status = CVT_SUCCESS;
 	uint32 i = 0;
@@ -181,7 +186,7 @@ end_of_function:
 
 
 
-int32 CVT_SetBuffer(const CVT_ContainerID_t ContainerID, void* Buffer, uint32 Size)
+int32 CVT_SetContent(const CVT_ContainerID_t ContainerID, void* Buffer, uint32 Size)
 {
 	int32  status = CVT_SUCCESS;
 	uint32 i = 0;

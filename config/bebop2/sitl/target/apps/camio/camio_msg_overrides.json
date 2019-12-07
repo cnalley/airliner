@@ -1,0 +1,16 @@
+{
+    "Airliner": {
+        "apps": {
+            "CAMIO": {
+                "operations": {
+                    "Noop":                { "airliner_mid":  "0x1cf2" },
+                    "Reset":               { "airliner_mid":  "0x1cf2" },
+                    "CAMIO_HkTlm_t":       { "airliner_mid":  "0x0cf6" },
+                    "CAMIO_SendHk":        { "airliner_mid":  "0x1cf3" }
+                },
+                "config": {
+                }
+            }
+        }
+    }
+}

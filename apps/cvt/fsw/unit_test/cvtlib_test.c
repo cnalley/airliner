@@ -54,9 +54,6 @@
 void Test_CVTLIB_GetContainer_Nominal(void)
 {
 	int32 status = 0;
-	char name1[] = "CVT_TEST1";
-	char name2[] = "CVT_TEST2";
-	char name3[] = "CVT_TEST3";
 	uint32 size1 = 100;
 	uint32 size2 = 200;
 	uint32 size3 = 300;
@@ -65,16 +62,16 @@ void Test_CVTLIB_GetContainer_Nominal(void)
 	CVT_ContainerID_t id3;
 	CVT_ContainerID_t id4;
 
-	status = CVT_GetContainer(name1, &size1, &id1);
+	status = CVT_GetContainer(1, size1, &id1);
     UtAssert_True (status == CVT_SUCCESS, "CVT_GetContainer did not return success");
 
-	status = CVT_GetContainer(name2, &size2, &id2);
+	status = CVT_GetContainer(2, size2, &id2);
     UtAssert_True (status == CVT_SUCCESS, "CVT_GetContainer did not return success");
 
-	status = CVT_GetContainer(name3, &size3, &id3);
+	status = CVT_GetContainer(3, size3, &id3);
     UtAssert_True (status == CVT_SUCCESS, "CVT_GetContainer did not return success");
 
-	status = CVT_GetContainer(name1, &size1, &id4);
+	status = CVT_GetContainer(1, size1, &id4);
     UtAssert_True(status == CVT_SUCCESS, "CVT_GetContainer did not return success");
     UtAssert_True(id4 == id1, "CVT_GetContainer did not return the correct ID");
 }
@@ -88,15 +85,13 @@ void Test_CVTLIB_GetContainer_ExhaustEntries(void)
 	CVT_ContainerID_t id;
 	uint32 i = 0;
 
-	for(i = 0; i < CVT_MAX_REGISTRATIONS; ++i)
+	for(i = 1; i <= CVT_MAX_REGISTRATIONS; ++i)
 	{
-		sprintf(name, "CVT_NAME%u", i);
-		status = CVT_GetContainer(name, &size, &id);
+		status = CVT_GetContainer(i, size, &id);
 	    UtAssert_True (status == CVT_SUCCESS, "CVT_GetContainer did not return success");
 	}
 
-	sprintf(name, "CVT_NAME%u", i);
-	status = CVT_GetContainer(name, &size, &id);
+	status = CVT_GetContainer(i, size, &id);
     UtAssert_True (status == CVT_REGISTRY_FULL, "CVT_GetContainer did not return CVT_REGISTRY_FULL");
 }
 
@@ -104,24 +99,21 @@ void Test_CVTLIB_GetContainer_ExhaustEntries(void)
 void Test_CVTLIB_GetContainer_ExhaustDatastore(void)
 {
 	int32 status = 0;
-	char name1[] = "CVT_NAME1";
-	char name2[] = "CVT_NAME2";
-	char name3[] = "CVT_NAME3";
 	uint32 size1 = CVT_DATA_STORE_SIZE - 1;
 	uint32 size2 = 1;
 	uint32 size3 = 1;
+	uint32 i = 0;
 	CVT_ContainerID_t id1;
 	CVT_ContainerID_t id2;
 	CVT_ContainerID_t id3;
-	uint32 i = 0;
 
-	status = CVT_GetContainer(name1, &size1, &id1);
+	status = CVT_GetContainer(1, size1, &id1);
     UtAssert_True (status == CVT_SUCCESS, "CVT_GetContainer did not return success");
 
-	status = CVT_GetContainer(name2, &size2, &id2);
+	status = CVT_GetContainer(2, size2, &id2);
     UtAssert_True (status == CVT_SUCCESS, "CVT_GetContainer did not return success");
 
-	status = CVT_GetContainer(name3, &size3, &id3);
+	status = CVT_GetContainer(3, size3, &id3);
     UtAssert_True (status == CVT_DATASTORE_FULL, "CVT_GetContainer did not return CVT_DATASTORE_FULL");
 }
 
@@ -129,9 +121,6 @@ void Test_CVTLIB_GetContainer_ExhaustDatastore(void)
 void Test_CVTLIB_GetContainer_IncorrectSize(void)
 {
 	int32 status = 0;
-	char name1[] = "CVT_TEST1";
-	char name2[] = "CVT_TEST2";
-	char name3[] = "CVT_TEST3";
 	uint32 size1 = 100;
 	uint32 size2 = 200;
 	uint32 size3 = 300;
@@ -140,42 +129,40 @@ void Test_CVTLIB_GetContainer_IncorrectSize(void)
 	CVT_ContainerID_t id3;
 	CVT_ContainerID_t id4;
 
-	status = CVT_GetContainer(name1, &size1, &id1);
+	status = CVT_GetContainer(1, size1, &id1);
     UtAssert_True (status == CVT_SUCCESS, "CVT_GetContainer did not return success");
 
-	status = CVT_GetContainer(name2, &size2, &id2);
+	status = CVT_GetContainer(2, size2, &id2);
     UtAssert_True (status == CVT_SUCCESS, "CVT_GetContainer did not return success");
 
-	status = CVT_GetContainer(name3, &size3, &id3);
+	status = CVT_GetContainer(3, size3, &id3);
     UtAssert_True (status == CVT_SUCCESS, "CVT_GetContainer did not return success");
 
-	status = CVT_GetContainer(name1, &size2, &id4);
+	status = CVT_GetContainer(1, size2, &id4);
     UtAssert_True(status == CVT_INCORRECT_SIZE, "CVT_GetContainer did not return CVT_INCORRECT_SIZE");
 }
 
 
-void Test_CVTLIB_SetBuffer_Nominal(void)
+void Test_CVTLIB_SetContent_Nominal(void)
 {
 	int32 status = 0;
-	char name[] = "CVT_TEST1";
 	char bufferExpected[] = "A quick brown fox jumped over the lazy dog.\n";
 	uint32 size = sizeof(bufferExpected);
 	char actualBuffer[sizeof(bufferExpected)];
 	CVT_ContainerID_t id;
 	uint32 updateCount = 0;
 
-	status = CVT_GetContainer(name, &size, &id);
+	status = CVT_GetContainer(1, size, &id);
     UtAssert_True (status == CVT_SUCCESS, "CVT_GetContainer did not return success");
 
-	status = CVT_SetBuffer(id, (void*) &bufferExpected[0], size);
+	status = CVT_SetContent(id, (void*) &bufferExpected[0], size);
     UtAssert_True (status == CVT_SUCCESS, "CVT_SetContainer did not return success");
 }
 
 
-void Test_CVTLIB_GetBuffer_Nominal(void)
+void Test_CVTLIB_GetContent_Nominal(void)
 {
 	int32 status = 0;
-	char name[] = "CVT_TEST1";
 	char bufferExpected[] = "A quick brown fox jumped over the lazy dog.\n";
 	uint32 size = sizeof(bufferExpected);
 	char actualBuffer[sizeof(bufferExpected)];
@@ -184,13 +171,13 @@ void Test_CVTLIB_GetBuffer_Nominal(void)
 
 	memset(actualBuffer, 0, sizeof(actualBuffer));
 
-	status = CVT_GetContainer(name, &size, &id);
+	status = CVT_GetContainer(1, size, &id);
     UtAssert_True (status == CVT_SUCCESS, "CVT_GetContainer did not return success");
 
-	status = CVT_SetBuffer(id, (void*) &bufferExpected[0], size);
+	status = CVT_SetContent(id, (void*) &bufferExpected[0], size);
     UtAssert_True (status == CVT_SUCCESS, "CVT_SetContainer did not return success");
 
-	status = CVT_GetBuffer(id, &updateCount, (void*) &actualBuffer[0], &size);
+	status = CVT_GetContent(id, &updateCount, (void*) &actualBuffer[0], &size);
     UtAssert_True (status == CVT_SUCCESS, "CVT_GetContainer did not return success");
     UtAssert_MemCmp(actualBuffer, bufferExpected, sizeof(actualBuffer), "Contents of actual buffer do not match expected.");
 }
@@ -213,12 +200,11 @@ void CVTLib_App_Test_AddTestCases(void)
     UtTest_Add(Test_CVTLIB_GetContainer_ExhaustDatastore, CVTLIB_Test_Setup, CVTLIB_Test_TearDown,
                "Test_CVTLIB_GetContainer_ExhaustDatastore");
 
-    UtTest_Add(Test_CVTLIB_SetBuffer_Nominal, CVTLIB_Test_Setup, CVTLIB_Test_TearDown,
-               "Test_CVTLIB_SetBuffer_Nominal");
+    UtTest_Add(Test_CVTLIB_SetContent_Nominal, CVTLIB_Test_Setup, CVTLIB_Test_TearDown,
+               "Test_CVTLIB_SetContent_Nominal");
 
-    UtTest_Add(Test_CVTLIB_GetBuffer_Nominal, CVTLIB_Test_Setup, CVTLIB_Test_TearDown,
-               "Test_CVTLIB_GetBuffer_Nominal");
-
+    UtTest_Add(Test_CVTLIB_GetContent_Nominal, CVTLIB_Test_Setup, CVTLIB_Test_TearDown,
+               "Test_CVTLIB_GetContent_Nominal");
 
 }
 

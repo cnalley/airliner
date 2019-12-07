@@ -1,0 +1,42 @@
+{
+    "Airliner": {
+        "apps": {
+            "CAMIO": {
+                "operations": {
+                    "Noop":             { "airliner_cc":  0, "macro": "CAMIO_CMD_MID", "airliner_msg": "CAMIO_NoArgCmd_t" },
+                    "Reset":            { "airliner_cc":  1, "macro": "CAMIO_CMD_MID", "airliner_msg": "CAMIO_NoArgCmd_t" },
+                    "CAMIO_HkTlm_t":    {                    "macro": "CAMIO_HK_TLM_MID", "airliner_msg": "CAMIO_HkTlm_t" },
+                    "SendHk":           { "airliner_cc":  0, "macro": "CAMIO_SEND_HK_MID", "airliner_msg": "CAMIO_NoArgCmd_t"},
+                    "AcquireImage":     { "airliner_cc":  0, "macro": "CAMIO_ACQUIRE_IMAGE_MID", "airliner_msg": "CAMIO_NoArgCmd_t"},
+                    "CAMIO_ImageMsg_t": {                    "macro": "CAMIO_IMAGE_MID", "airliner_msg": "CAMIO_ImageMsg_t" }
+                },    
+                "scheduler": {
+                    "activities": [
+                        "CAMIO_SEND_HK_MID",
+                        "CAMIO_ACQUIRE_IMAGE_MID"
+                    ]
+                },
+                "events": [
+                    {"macro": "CAMIO_INF_EID",              "id": 1},
+                    {"macro": "CAMIO_INIT_INF_EID",         "id": 2},
+                    {"macro": "CAMIO_CONFIG_TABLE_INF_EID", "id": 3},
+                    {"macro": "CAMIO_CDS_INF_EID",          "id": 4},
+                    {"macro": "CAMIO_CMD_INF_EID",          "id": 5},
+                    {"macro": "CAMIO_ERR_EID",              "id": 6},
+                    {"macro": "CAMIO_INIT_ERR_EID",         "id": 7},
+                    {"macro": "CAMIO_CONFIG_TABLE_ERR_EID", "id": 8},
+                    {"macro": "CAMIO_CDS_ERR_EID",          "id": 9},
+                    {"macro": "CAMIO_CMD_ERR_EID",          "id": 10},
+                    {"macro": "CAMIO_PIPE_ERR_EID",         "id": 11},
+                    {"macro": "CAMIO_MSGID_ERR_EID",        "id": 12},
+                    {"macro": "CAMIO_MSGLEN_ERR_EID",       "id": 13}
+                ],
+                "config": {
+                },
+                "tables": [
+                    {"id": "CONFIG_TBL",  "title": "CAMIO Configuration",  "isDumpTable": false}
+                ]
+            }
+        }
+    }
+}

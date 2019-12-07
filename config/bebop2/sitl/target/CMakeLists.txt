@@ -484,3 +484,15 @@ add_airliner_app(
     MSG_OVERRIDES ${CMAKE_CURRENT_SOURCE_DIR}/apps/lgc/lgc_msg_overrides.json
 )
 
+add_airliner_app(
+    camio
+    DEFINITION ${PROJECT_SOURCE_DIR}/apps/camio/fsw/for_build
+    CONFIG     ${CMAKE_CURRENT_SOURCE_DIR}/apps/camio
+    CONFIG_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/apps/camio/camio_custom.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../inc/camio_platform_cfg.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../shared/inc/camio_msgids.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../shared/inc/camio_perfids.h
+    MSG_OVERRIDES ${CMAKE_CURRENT_SOURCE_DIR}/apps/camio/camio_msg_overrides.json
+)
+

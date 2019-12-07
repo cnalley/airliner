@@ -51,7 +51,7 @@ extern "C" {
 
 typedef struct
 {
-	char   Name[CVT_CONTAINER_NAME_LENGTH];
+	uint16 ID;
 	uint32 Size;
 	uint32 Offset;
 	uint32 UpdateCount;

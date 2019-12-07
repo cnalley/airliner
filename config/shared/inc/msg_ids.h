@@ -672,6 +672,14 @@
 #define PRM_OUT_DATA_MID                             (0x1cf0)
 #define PRM_HK_TLM_MID                               (0x0cf1)
 
+/* CAMIO                                                   */
+#define CAMIO_CMD_MID                                (0x1cf2)
+#define CAMIO_SEND_HK_MID                            (0x1cf3)
+#define CAMIO_ACQUIRE_IMAGE_MID                      (0x1cf4)
+#define CAMIO_OUT_DATA_MID                           (0x1cf5)
+#define CAMIO_HK_TLM_MID                             (0x0cf6)
+#define CAMIO_IMAGE_MID                              (0x0cf7)
+
 #define SCH_ACTIVITY_DONE_MID                        (0x0f00)
 
 #endif

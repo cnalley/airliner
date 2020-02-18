@@ -672,6 +672,12 @@
 #define PRM_OUT_DATA_MID                             (0x1cf0)
 #define PRM_HK_TLM_MID                               (0x0cf1)
 
+/* KRPC                                                    */
+#define KRPC_HK_TLM_MID                              (0x0d01)
+#define KRPC_SEND_HK_MID                             (0x1d02)
+#define KRPC_WAKEUP_MID                              (0x1d03)
+#define KRPC_CMD_MID                                 (0x1d04)
+
 #define SCH_ACTIVITY_DONE_MID                        (0x0f00)
 
 #endif

@@ -1,98 +1,63 @@
-
-/************************************************************************
+/*
 ** Pragmas
-*************************************************************************/
+*/
 
-/************************************************************************
-** Includes
-*************************************************************************/
+/*
+** Include Files
+*/
 #include "cfe_tbl_filedef.h"
 #include "krpc_tbldefs.h"
 
-/************************************************************************
+/*
 ** Local Defines
-*************************************************************************/
+*/
 
-/************************************************************************
-** Local Structure Definitions
-*************************************************************************/
-
-/**
-** \brief The cFE KRPC config table definition.
-**
-** Content format: ObjName[64], TblName[38], Desc[32], TgtFileName[20], ObjSize
-**    ObjName - variable name of config table, e.g., KRPC_ConfigDefTbl[]
-**    TblName - app's table name, e.g., KRPC.CONFIG_TBL, where KRPC is the same app name
-**              used in cfe_es_startup.scr, and KRPC_defConfigTbl is the same table
-**              name passed in to CFE_TBL_Register()
-**    Desc - description of table in string format
-**    TgtFileName[20] - table file name, compiled as .tbl file extension
-**    ObjSize - size of the entire table
-**
+/*
+** Local Structure Declarations
 */
 static CFE_TBL_FileDef_t CFE_TBL_FileDef =
 {
+    /* Content format: ObjName[64], TblName[38], Desc[32], TgtFileName[20], ObjSize
+    **    ObjName - variable name of config table, e.g., CI_ConfigDefTbl[]
+    **    TblName - app's table name, e.g., CI.CONFIG_TBL, where CI is the same app name
+    **              used in cfe_es_startup.scr, and CI_defConfigTbl is the same table
+    **              name passed in to CFE_TBL_Register()
+    **    Desc - description of table in string format
+    **    TgtFileName[20] - table file name, compiled as .tbl file extension
+    **    ObjSize - size of the entire table
+    */
+
     "KRPC_ConfigTbl", "KRPC.CONFIG_TBL", "KRPC default config table",
-    "krpc_config.tbl", (sizeof(KRPC_ConfigTblEntry_t) * KRPC_CONFIG_TABLE_MAX_ENTRIES)
+    "krpc_config.tbl", (sizeof(KRPC_ConfigTbl_t))
 };
 
-/************************************************************************
+/*
 ** External Global Variables
-*************************************************************************/
-
-/************************************************************************
-** Global Variables
-*************************************************************************/
-
-/**
-**  \brief Default KRPC config table data
 */
-KRPC_ConfigTblEntry_t KRPC_ConfigTbl[KRPC_CONFIG_TABLE_MAX_ENTRIES] =
-{
-    /* Entry 1 */
-    {
-        .iParam = 123
 
-        /* TODO:  Add default values for Config parameters here.
-        **
-        ** Examples: (See example of type declarations in krpc_tbldefs.h)
-        **    .cParam   = 7,
-        **    .cParams  = "Init Str Value",
-        **    .ucParam  = 'A',
-        **    .ucParams = "/dev/ttyUSB",
-        **
-        **    .sParam   = -16,
-        **    .sParams  = {-3, -2, -1, 0, 1, 2, 3, 4},
-        **    .usParam  = 16,
-        **    .usParams = {1, 2, 3, 4, 5, 6, 7, 8},
-        **
-        **    .iParam   = -32,
-        **    .iParams  = {-123, -234, 0, 123, 234},
-        **    .uiParam  = -32,
-        **    .uiParams = {123, 234, 345, 456, 678},
-        **
-        **    .fParam  = 32.1234,
-        **    .fParams = {-12.34, 0.0, 12.34},
-        **
-        **    .dParam = 123.456789,
-        **    .dParams = {-123.456789, 0.0, 123.456789}
-        */
-    }
+/*
+** Global Variables
+*/
+
+/* Default KRPC config table data */
+KRPC_ConfigTbl_t KRPC_ConfigTbl =
+{
+	/* TODO:  Define table. */
 };
 
-/************************************************************************
+/*
 ** Local Variables
-*************************************************************************/
+*/
 
-/************************************************************************
-** Local Function Prototypes
-*************************************************************************/
+/*
+** Function Prototypes
+*/
 
-/************************************************************************
+/*
 ** Function Definitions
-*************************************************************************/
+*/
 
-/************************/
-/*  End of File Comment */
-/************************/
+/*=======================================================================================
+** End of file krpc_config.c
+**=====================================================================================*/
     

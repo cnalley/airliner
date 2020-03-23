@@ -11,6 +11,7 @@ CFE_APP, /cf/apps/MM.so,        MM_AppMain,      MM,        172, 327680, 0x0, 0,
 CFE_APP, /cf/apps/MD.so,        MD_AppMain,      MD,        169, 327680, 0x0, 0, 2;
 CFE_APP, /cf/apps/CS.so,        CS_AppMain,      CS,        160, 327680, 0x0, 0, 2;
 CFE_APP, /cf/apps/KRPC.so,      KRPC_AppMain,    KRPC,     123, 327680, 0x0, 0, 2;
+CFE_APP, /cf/apps/GNC.so,       GNC_AppMain,     GNC,      129, 327680, 0x0, 0, 2;
 CFE_APP, /cf/apps/SCH.so,       SCH_AppMain,     SCH,       34,  40960, 0x0, 0, 2;
 !CFE_LIB, /cf/apps/schlib.so,    SCH_LibInit,     SCH_LIB,    0,     0, 0x0, 0, 2;
 CFE_APP, /cf/apps/EA.so,        EA_AppMain,      EA,        184, 327680, 0x0, 0, 2;

@@ -8,11 +8,19 @@
 #include "krpc_app.h"
 #include "krpc_msg.h"
 #include "krpc_version.h"
+#include <string>
+#include <unistd.h>
+/* RPC includes */
 #include <krpc.hpp>
 #include <krpc/services/krpc.hpp>
-#include <string>
+#include <krpc/services/space_center.hpp>
 
-#include <unistd.h>
+/** \brief Current Value Table */
+KRPC_CurrentValueTable_t CVT;
+
+/** \brief Shared data mutex */
+uint32 MutexCVT;
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
@@ -75,15 +83,15 @@ int32 KRPC::InitPipe()
 
     /* Init schedule pipe and subscribe to wakeup messages */
     iStatus = CFE_SB_CreatePipe(&SchPipeId,
-    		KRPC_SCH_PIPE_DEPTH,
-			KRPC_SCH_PIPE_NAME);
+            KRPC_SCH_PIPE_DEPTH,
+            KRPC_SCH_PIPE_NAME);
     if (iStatus == CFE_SUCCESS)
     {
         iStatus = CFE_SB_SubscribeEx(KRPC_WAKEUP_MID, SchPipeId, CFE_SB_Default_Qos, KRPC_WAKEUP_MID_MAX_MSG_COUNT);
         if (iStatus != CFE_SUCCESS)
         {
             (void) CFE_EVS_SendEvent(KRPC_SUBSCRIBE_ERR_EID, CFE_EVS_ERROR,
-            		"Sch Pipe failed to subscribe to KRPC_WAKEUP_MID. (0x%08lX)",
+                    "Sch Pipe failed to subscribe to KRPC_WAKEUP_MID. (0x%08lX)",
                     iStatus);
             goto KRPC_InitPipe_Exit_Tag;
         }
@@ -92,23 +100,23 @@ int32 KRPC::InitPipe()
         if (iStatus != CFE_SUCCESS)
         {
             (void) CFE_EVS_SendEvent(KRPC_SUBSCRIBE_ERR_EID, CFE_EVS_ERROR,
-					 "CMD Pipe failed to subscribe to KRPC_SEND_HK_MID. (0x%08X)",
-					 (unsigned int)iStatus);
+                    "CMD Pipe failed to subscribe to KRPC_SEND_HK_MID. (0x%08X)",
+                    (unsigned int)iStatus);
             goto KRPC_InitPipe_Exit_Tag;
         }
     }
     else
     {
         (void) CFE_EVS_SendEvent(KRPC_PIPE_INIT_ERR_EID, CFE_EVS_ERROR,
-			 "Failed to create SCH pipe (0x%08lX)",
-			 iStatus);
+            "Failed to create SCH pipe (0x%08lX)",
+            iStatus);
         goto KRPC_InitPipe_Exit_Tag;
     }
 
     /* Init command pipe and subscribe to command messages */
     iStatus = CFE_SB_CreatePipe(&CmdPipeId,
-    		KRPC_CMD_PIPE_DEPTH,
-			KRPC_CMD_PIPE_NAME);
+            KRPC_CMD_PIPE_DEPTH,
+            KRPC_CMD_PIPE_NAME);
     if (iStatus == CFE_SUCCESS)
     {
         /* Subscribe to command messages */
@@ -117,23 +125,23 @@ int32 KRPC::InitPipe()
         if (iStatus != CFE_SUCCESS)
         {
             (void) CFE_EVS_SendEvent(KRPC_SUBSCRIBE_ERR_EID, CFE_EVS_ERROR,
-				 "CMD Pipe failed to subscribe to KRPC_CMD_MID. (0x%08lX)",
-				 iStatus);
+                "CMD Pipe failed to subscribe to KRPC_CMD_MID. (0x%08lX)",
+                iStatus);
             goto KRPC_InitPipe_Exit_Tag;
         }
     }
     else
     {
         (void) CFE_EVS_SendEvent(KRPC_PIPE_INIT_ERR_EID, CFE_EVS_ERROR,
-			 "Failed to create CMD pipe (0x%08lX)",
-			 iStatus);
+            "Failed to create CMD pipe (0x%08lX)",
+            iStatus);
         goto KRPC_InitPipe_Exit_Tag;
     }
 
 KRPC_InitPipe_Exit_Tag:
     return iStatus;
 }
-    
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
@@ -142,9 +150,10 @@ KRPC_InitPipe_Exit_Tag:
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void KRPC::InitData()
 {
-    /* Init housekeeping message. */
-    CFE_SB_InitMsg(&HkTlm,
-    		KRPC_HK_TLM_MID, sizeof(HkTlm), TRUE);
+    /* Init current value table */
+    CFE_PSP_MemSet((void*)&CVT, 0x00, sizeof(CVT));
+    /* Init housekeeping message */
+    CFE_SB_InitMsg(&HkTlm, KRPC_HK_TLM_MID, sizeof(HkTlm), TRUE);
 }
 
 
@@ -182,17 +191,24 @@ int32 KRPC::InitApp()
     {
         goto KRPC_InitApp_Exit_Tag;
     }
-    
-    ChildTaskPtr = KRPC_DataExchange_Task;
+
+    /* Create mutex for current value table */
+    iStatus = OS_MutSemCreate(&MutexCVT, "KRPC CVT Mutex", 0);
+    if (iStatus != CFE_SUCCESS)
+    {
+        goto KRPC_InitApp_Exit_Tag;
+    }
+
+    ChildTaskPtr = DataStreamTask;
 
     iStatus = CFE_ES_CreateChildTask(
             &ChildTaskID,
             KRPC_CHILD_TASK_NAME,
             ChildTaskPtr,
             0,
-			KRPC_CHILD_TASK_STACK_SIZE,
+            KRPC_CHILD_TASK_STACK_SIZE,
             KRPC_CHILD_TASK_PRIORITY,
-			KRPC_CHILD_TASK_FLAGS);
+            KRPC_CHILD_TASK_FLAGS);
 
 
 KRPC_InitApp_Exit_Tag:
@@ -200,10 +216,10 @@ KRPC_InitApp_Exit_Tag:
     {
         (void) CFE_EVS_SendEvent(KRPC_INIT_INF_EID, CFE_EVS_INFORMATION,
                                  "Initialized.  Version %d.%d.%d.%d",
-								 KRPC_MAJOR_VERSION,
-								 KRPC_MINOR_VERSION,
-								 KRPC_REVISION,
-								 KRPC_MISSION_REV);
+                                 KRPC_MAJOR_VERSION,
+                                 KRPC_MINOR_VERSION,
+                                 KRPC_REVISION,
+                                 KRPC_MISSION_REV);
     }
     else
     {
@@ -275,7 +291,7 @@ int32 KRPC::RcvSchPipeMsg(int32 iBlocking)
     else
     {
         (void) CFE_EVS_SendEvent(KRPC_RCVMSG_ERR_EID, CFE_EVS_ERROR,
-			  "SCH pipe read error (0x%08lX).", iStatus);
+                "SCH pipe read error (0x%08lX).", iStatus);
     }
 
     return iStatus;
@@ -304,10 +320,39 @@ void KRPC::ProcessCmdPipe()
             switch (CmdMsgId)
             {
                 case KRPC_CMD_MID:
+                {
                     ProcessAppCmds(CmdMsgPtr);
                     break;
-
+                }
+                case KRPC_TARGET_PITCH_HEADING_MID:
+                {
+                    OS_MutSemTake(MutexCVT);
+                    CFE_PSP_MemCpy(&CVT.TargetPitchAndHeadingCmd, 
+                            CmdMsgPtr, 
+                            sizeof(CVT.TargetPitchAndHeadingCmd));
+                    OS_MutSemGive(MutexCVT);
+                    break;
+                }
+                case KRPC_SET_THROTTLE_MID:
+                {
+                    OS_MutSemTake(MutexCVT);
+                    CFE_PSP_MemCpy(&CVT.SetThrottleCmd, 
+                            CmdMsgPtr, 
+                            sizeof(CVT.SetThrottleCmd));
+                    OS_MutSemGive(MutexCVT);
+                    break;
+                }
+                case KRPC_SAS_MODE_MID:
+                {
+                    OS_MutSemTake(MutexCVT);
+                    CFE_PSP_MemCpy(&CVT.SasModeCmd, 
+                            CmdMsgPtr, 
+                            sizeof(CVT.SasModeCmd));
+                    OS_MutSemGive(MutexCVT);
+                    break;
+                }
                 default:
+                {
                     /* Bump the command error counter for an unknown command.
                      * (This should only occur if it was subscribed to with this
                      *  pipe, but not handled in this switch-case.) */
@@ -315,6 +360,7 @@ void KRPC::ProcessCmdPipe()
                     (void) CFE_EVS_SendEvent(KRPC_MSGID_ERR_EID, CFE_EVS_ERROR,
                                       "Recvd invalid CMD msgId (0x%04X)", (unsigned short)CmdMsgId);
                     break;
+                }
             }
         }
         else if (iStatus == CFE_SB_NO_MESSAGE)
@@ -347,25 +393,89 @@ void KRPC::ProcessAppCmds(CFE_SB_Msg_t* MsgPtr)
         switch (uiCmdCode)
         {
             case KRPC_NOOP_CC:
+            {
                 HkTlm.usCmdCnt++;
                 (void) CFE_EVS_SendEvent(KRPC_CMD_NOOP_EID, CFE_EVS_INFORMATION,
-					"Recvd NOOP. Version %d.%d.%d.%d",
-					KRPC_MAJOR_VERSION,
-					KRPC_MINOR_VERSION,
-					KRPC_REVISION,
-					KRPC_MISSION_REV);
+                    "Recvd NOOP. Version %d.%d.%d.%d",
+                    KRPC_MAJOR_VERSION,
+                    KRPC_MINOR_VERSION,
+                    KRPC_REVISION,
+                    KRPC_MISSION_REV);
                 break;
-
+            }
             case KRPC_RESET_CC:
+            {
                 HkTlm.usCmdCnt = 0;
                 HkTlm.usCmdErrCnt = 0;
                 break;
-
+            }
+            case KRPC_ENGAGE_RCS_CC:
+            {
+                OS_MutSemTake(MutexCVT);
+                CVT.EngageRCS = true;
+                OS_MutSemGive(MutexCVT);
+                (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
+                                  "RCS activated.");
+                HkTlm.usCmdCnt++;
+                break;
+            }
+            case KRPC_DISENGAGE_RCS_CC:
+            {
+                OS_MutSemTake(MutexCVT);
+                CVT.EngageRCS = false;
+                OS_MutSemGive(MutexCVT);
+                (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
+                                  "RCS deactivated.");
+                HkTlm.usCmdCnt++;
+                break;
+            }
+            case KRPC_ENGAGE_SAS_CC:
+            {
+                OS_MutSemTake(MutexCVT);
+                CVT.EngageSAS = true;
+                OS_MutSemGive(MutexCVT);
+                (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
+                                  "SAS activated.");
+                HkTlm.usCmdCnt++;
+                break;
+            }
+            case KRPC_DISENGAGE_SAS_CC:
+            {
+                OS_MutSemTake(MutexCVT);
+                CVT.EngageSAS = false;
+                OS_MutSemGive(MutexCVT);
+                (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
+                                  "SAS deactivated.");
+                HkTlm.usCmdCnt++;
+                break;
+            }
+            case KRPC_ACTIVATE_NEXT_STAGE_CC:
+            {
+                OS_MutSemTake(MutexCVT);
+                CVT.ActivateNextStage = true;
+                OS_MutSemGive(MutexCVT);
+                (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
+                                  "Next stage activated.");
+                HkTlm.usCmdCnt++;
+                break;
+            }
+            case KRPC_ENGAGE_AUTOPILOT_CC:
+            {
+                OS_MutSemTake(MutexCVT);
+                CVT.EngageAutopilot = true;
+                OS_MutSemGive(MutexCVT);
+                (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
+                                  "Autopilot activated.");
+                HkTlm.usCmdCnt++;
+                break;
+            }
             default:
+            {
                 HkTlm.usCmdErrCnt++;
                 (void) CFE_EVS_SendEvent(KRPC_CC_ERR_EID, CFE_EVS_ERROR,
                                   "Recvd invalid command code (%u)", (unsigned int)uiCmdCode);
                 break;
+            }
         }
     }
 }
@@ -492,22 +602,178 @@ void KRPC::AppMain()
 }
 
 
-void KRPC::KRPC_DataExchange_Task(void)
+void KRPC::DataStreamTask(void)
 {
-	CFE_ES_RegisterChildTask();
-	
-	auto conn = krpc::connect("CFS", "192.168.0.155", 50000, 50001);
-	krpc::services::KRPC krpc(&conn);
-	std::string krpcVersion = krpc.get_status().version();
-	(void) CFE_EVS_SendEvent(KRPC_INIT_INF_EID, CFE_EVS_INFORMATION,
-                                 "Connected to KRPC server. Version %s",
-								 krpcVersion.c_str());
-	/* Loop */
-	while(1)
-	{
-	    usleep(100);        	
-	}
-	CFE_ES_ExitChildTask();
+    /* Telemetry */
+    KRPC_MeanAltitudeTlm_t AltitudeTlm;
+    KRPC_RotationTlm_t RotationTlm;
+    KRPC_VelocityTlm_t VelocityTlm;
+    KRPC_MetTlm_t MetTlm;
+    KRPC_UtTlm_t UtTlm;
+    KRPC_GForceTlm_t GForceTlm;
+    KRPC_ApoapsisAltitudeTlm_t ApoapsisAltitudeTlm;
+    KRPC_PeriapsisAltitudeTlm_t PeriapsisAltitudeTlm;
+    KRPC_SolidFuelTlm_t SolidFuelTlm;
+
+    /* Commands */
+    KRPC_CurrentValueTable_t CmdState = {0};
+
+    /* Register this child task */
+    CFE_ES_RegisterChildTask();
+
+    /* Init altitude packet */
+    CFE_SB_InitMsg(&AltitudeTlm,
+                   KRPC_ALTITUDE_TLM_MID, sizeof(AltitudeTlm), TRUE);
+    /* Init rotation packet */
+    CFE_SB_InitMsg(&RotationTlm,
+                   KRPC_ROTATION_TLM_MID, sizeof(RotationTlm), TRUE);            
+    /* Init velocity packet */
+    CFE_SB_InitMsg(&VelocityTlm,
+                   KRPC_VELOCITY_TLM_MID, sizeof(VelocityTlm), TRUE);
+    /* Init MET packet */
+    CFE_SB_InitMsg(&MetTlm,
+                   KRPC_MET_TLM_MID, sizeof(MetTlm), TRUE);
+    /* Init UT packet */
+    CFE_SB_InitMsg(&UtTlm,
+                   KRPC_UT_TLM_MID, sizeof(UtTlm), TRUE);
+    /* Init G force packet */
+    CFE_SB_InitMsg(&GForceTlm,
+                   KRPC_G_FORCE_TLM_MID, sizeof(GForceTlm), TRUE);
+    /* Init apoapsis altitude packet */
+    CFE_SB_InitMsg(&ApoapsisAltitudeTlm,
+                   KRPC_APOAPSIS_TLM_MID, sizeof(ApoapsisAltitudeTlm), TRUE);
+    /* Init periapsis altitude packet */
+    CFE_SB_InitMsg(&PeriapsisAltitudeTlm,
+                   KRPC_PERIAPSIS_TLM_MID, sizeof(PeriapsisAltitudeTlm), TRUE);
+    /* Init solid fuel packet */
+    CFE_SB_InitMsg(&SolidFuelTlm,
+                   KRPC_SOLID_FUEL_TLM_MID, sizeof(SolidFuelTlm), TRUE);
+
+    /* Connect to the RPC server */
+    krpc::Client conn = krpc::connect("CFS", "192.168.0.155", 50000, 50001);
+    krpc::services::KRPC krpc(&conn);
+    krpc::services::SpaceCenter sc(&conn);
+    /* Get the version of the RPC server */
+    std::string krpcVersion = krpc.get_status().version();
+    (void) CFE_EVS_SendEvent(KRPC_INIT_INF_EID, CFE_EVS_INFORMATION,
+            "Connected to KRPC server. Version %s",
+            krpcVersion.c_str());
+    /* Get the active vessal */
+    auto vessel = sc.active_vessel();
+    /* Get the reference frame */
+    auto ref_frame = vessel.orbit().body().reference_frame();
+    /* Setup streams */
+    /* Universal time in seconds */
+    auto ut = sc.ut_stream();
+    /* Vessel mission elapsed time in seconds */
+    auto met = vessel.met_stream();
+    /* Mean altitude */
+    auto altitude = vessel.flight().mean_altitude_stream();
+    /* Apoapsis altitude */
+    auto apoapsis = vessel.orbit().apoapsis_altitude_stream();
+    /* Fuel */
+    auto stage_2_resources = vessel.resources_in_decouple_stage(2, false);
+    auto srb_fuel = stage_2_resources.amount_stream("SolidFuel");
+
+    /* Loop */
+    while(1)
+    {
+        /* Retrieve current values */
+        /* Universal time */
+        UtTlm.Ut = ut();
+        /* Publish to the software bus */
+        CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&UtTlm);
+        (void) CFE_SB_SendMsg((CFE_SB_Msg_t*)&UtTlm);
+        /* Mission elapsed time */
+        MetTlm.Met = met();
+        /* Publish to the software bus */
+        CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&MetTlm);
+        (void) CFE_SB_SendMsg((CFE_SB_Msg_t*)&MetTlm);
+        /* Mean altitude */
+        AltitudeTlm.Altitude = altitude();
+        /* Publish to the software bus */
+        CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&AltitudeTlm);
+        (void) CFE_SB_SendMsg((CFE_SB_Msg_t*)&AltitudeTlm);
+        /* Apoapsis altitude */
+        ApoapsisAltitudeTlm.ApoapsisAltitude = apoapsis();
+        /* Publish to the software bus */
+        CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&ApoapsisAltitudeTlm);
+        (void) CFE_SB_SendMsg((CFE_SB_Msg_t*)&ApoapsisAltitudeTlm);
+        /* Solid fuel */
+        SolidFuelTlm.Fuel = srb_fuel();
+        /* Publish to the software bus */
+        CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&SolidFuelTlm);
+        (void) CFE_SB_SendMsg((CFE_SB_Msg_t*)&SolidFuelTlm);
+
+        /* Outgoing commands */
+        OS_MutSemTake(MutexCVT);
+        /* RCS state */
+        if(CVT.EngageRCS != CmdState.EngageRCS)
+        {
+            vessel.control().set_rcs(CVT.EngageRCS);
+            CmdState.EngageRCS = CVT.EngageRCS;
+        }
+        /* SAS state */
+        if(CVT.EngageSAS != CmdState.EngageSAS)
+        {
+            vessel.control().set_sas(CVT.EngageSAS);
+            CmdState.EngageSAS = CVT.EngageSAS;
+        }
+        /* Next stage */
+        if(true == CVT.ActivateNextStage)
+        {
+            vessel.control().activate_next_stage();
+            CVT.ActivateNextStage = false;
+        }
+        /* Autopilot */
+        if(CVT.EngageAutopilot != CmdState.EngageAutopilot)
+        {
+            if(true == CVT.EngageAutopilot)
+            {
+                vessel.auto_pilot().engage();
+            }
+            else
+            {
+                vessel.auto_pilot().disengage();
+            }
+            CmdState.EngageAutopilot = CVT.EngageAutopilot;
+        }
+        /* Autopilot target pitch and heading */
+        if(CVT.TargetPitchAndHeadingCmd.TargetPitch !=
+           CmdState.TargetPitchAndHeadingCmd.TargetPitch ||
+           CVT.TargetPitchAndHeadingCmd.TargetHeading !=
+           CmdState.TargetPitchAndHeadingCmd.TargetHeading)
+        {
+            vessel.auto_pilot().target_pitch_and_heading(
+            CVT.TargetPitchAndHeadingCmd.TargetPitch,
+            CVT.TargetPitchAndHeadingCmd.TargetHeading);
+
+            CmdState.TargetPitchAndHeadingCmd.TargetPitch =
+            CVT.TargetPitchAndHeadingCmd.TargetPitch;
+            CmdState.TargetPitchAndHeadingCmd.TargetHeading =
+            CVT.TargetPitchAndHeadingCmd.TargetHeading;
+        }
+        /* Throttle */
+        if(CVT.SetThrottleCmd.Throttle != CmdState.SetThrottleCmd.Throttle)
+        {
+            vessel.control().set_throttle(CVT.SetThrottleCmd.Throttle);
+            CmdState.SetThrottleCmd.Throttle = CVT.SetThrottleCmd.Throttle;
+        }
+        /* SAS mode */
+        if(CVT.SasModeCmd.Mode != CmdState.SasModeCmd.Mode)
+        {
+            krpc::services::SpaceCenter::SASMode mode = 
+            (krpc::services::SpaceCenter::SASMode)CVT.SasModeCmd.Mode;
+            vessel.auto_pilot().set_sas_mode(mode);
+            CmdState.SasModeCmd = CVT.SasModeCmd;
+        }
+        OS_MutSemGive(MutexCVT);
+
+        /* 50 Hz */
+        usleep(20000);
+    }
+
+    CFE_ES_ExitChildTask();
 }
 
 /************************/

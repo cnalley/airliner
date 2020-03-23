@@ -1,0 +1,17 @@
+table.table.table-condensed
+  tbody
+    tr
+      th Cmd Count
+      td
+        div(data-cdr={tlm:[{name:'/GNC/GNC_HkTlm_t/usCmdCnt'}]}) ---
+    tr
+      th Error Count
+      td
+        div(data-cdr={tlm:[{name:'/GNC/GNC_HkTlm_t/usCmdErrCnt'}]}) ---
+              
+footer.btn-group(role="group")      
+  button.btn.cdr-primary(data-cdr={cmd:{name:'/GNC/Noop'}}) No-Op    
+  button.btn.cdr-primary(data-cdr={cmd:{name:'/GNC/Reset'}}) Reset    
+  button.btn.cdr-primary(data-cdr={cmd:{name:'/GNC/SendHk'}}) Send HK  
+  button.btn.cdr-primary(data-cdr={cmd:{name:'/GNC/Wakeup'}}) Wakeup
+      

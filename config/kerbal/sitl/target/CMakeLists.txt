@@ -37,15 +37,6 @@ add_airliner_app(
     DEFINITION ${PROJECT_SOURCE_DIR}/apps/cfs_lib/fsw/for_build)
 
 add_airliner_app(
-    px4lib
-    DEFINITION ${PROJECT_SOURCE_DIR}/apps/px4lib/fsw/for_build
-    MSG_OVERRIDES ${CMAKE_CURRENT_SOURCE_DIR}/apps/px4lib/px4_msg_overrides.json)
-
-add_airliner_app(
-    pblib
-    DEFINITION ${PROJECT_SOURCE_DIR}/apps/pblib/fsw/for_build)
-
-add_airliner_app(
     sch
     DEFINITION ${PROJECT_SOURCE_DIR}/apps/sch/fsw/for_build
     CONFIG     ${CMAKE_CURRENT_SOURCE_DIR}/apps/sch
@@ -174,33 +165,6 @@ add_airliner_app(
 )
 
 add_airliner_app(
-    ci
-    DEFINITION ${PROJECT_SOURCE_DIR}/apps/ci/fsw/for_build
-    CONFIG     ${CMAKE_CURRENT_SOURCE_DIR}/apps/ci
-    CONFIG_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/apps/ci/ci_custom.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../inc/ci_platform_cfg.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../inc/ci_msgids.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../shared/inc/ci_mission_cfg.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../shared/inc/ci_perfids.h
-    MSG_OVERRIDES ${CMAKE_CURRENT_SOURCE_DIR}/apps/ci/ci_msg_overrides.json
-)
-
-add_airliner_app(
-    to
-    DEFINITION ${PROJECT_SOURCE_DIR}/apps/to/fsw/for_build
-    CONFIG     ${CMAKE_CURRENT_SOURCE_DIR}/apps/to
-    CONFIG_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/apps/to/to_custom.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/apps/to/to_custom_udp.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../inc/to_platform_cfg.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../inc/to_msgids.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../shared/inc/to_mission_cfg.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../shared/inc/to_perfids.h
-    MSG_OVERRIDES ${CMAKE_CURRENT_SOURCE_DIR}/apps/to/to_msg_overrides.json
-)
-
-add_airliner_app(
     ea
     DEFINITION ${PROJECT_SOURCE_DIR}/apps/ea/fsw/for_build
     CONFIG     ${CMAKE_CURRENT_SOURCE_DIR}/apps/ea
@@ -223,4 +187,14 @@ add_airliner_app(
     MSG_OVERRIDES ${CMAKE_CURRENT_SOURCE_DIR}/apps/krpc/krpc_msg_overrides.json
 )
 
+add_airliner_app(
+    gnc
+    DEFINITION ${PROJECT_SOURCE_DIR}/apps/gnc/fsw/for_build
+    CONFIG     ${CMAKE_CURRENT_SOURCE_DIR}/apps/gnc
+    CONFIG_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../inc/gnc_platform_cfg.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../shared/inc/gnc_msgids.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../shared/inc/gnc_perfids.h
+    MSG_OVERRIDES ${CMAKE_CURRENT_SOURCE_DIR}/apps/gnc/gnc_msg_overrides.json
+)
 

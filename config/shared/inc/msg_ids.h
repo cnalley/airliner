@@ -677,6 +677,26 @@
 #define KRPC_SEND_HK_MID                             (0x1d02)
 #define KRPC_WAKEUP_MID                              (0x1d03)
 #define KRPC_CMD_MID                                 (0x1d04)
+#define KRPC_TARGET_PITCH_HEADING_MID                (0x1d05)
+#define KRPC_SET_THROTTLE_MID                        (0x1d06)
+#define KRPC_ACTIVATE_TLM_MID                        (0x1d07)
+#define KRPC_SAS_MODE_MID                            (0x1d08)
+#define KRPC_ALTITUDE_TLM_MID                        (0x0d09)
+#define KRPC_ROTATION_TLM_MID                        (0x0d0a)
+#define KRPC_VELOCITY_TLM_MID                        (0x0d0b)
+#define KRPC_MET_TLM_MID                             (0x0d0c)
+#define KRPC_G_FORCE_TLM_MID                         (0x0d0d)
+#define KRPC_APOAPSIS_TLM_MID                        (0x0d0e)
+#define KRPC_PERIAPSIS_TLM_MID                       (0x0d0f)
+#define KRPC_UT_TLM_MID                              (0x0d10)
+#define KRPC_SOLID_FUEL_TLM_MID                      (0x0d11)
+
+/* GNC                                                     */
+#define GNC_CMD_MID                                  (0x1d12)
+#define GNC_SEND_HK_MID                              (0x1d13)
+#define GNC_WAKEUP_MID                               (0x1d14)
+#define GNC_OUT_DATA_MID                             (0x1d15)
+#define GNC_HK_TLM_MID                               (0x0d16)
 
 #define SCH_ACTIVITY_DONE_MID                        (0x0f00)
 

@@ -250,6 +250,19 @@ typedef enum {
 */
 	KRPC_CFGTBL_LOAD_ERR_EID,
 
+/** \brief <tt> 'KRPC - Recvd $x cmd (%us)' </tt>
+**  \event <tt> 'KRPC - Recvd $x cmd (%us)' </tt>
+**  
+**  \par Type: INFORMATION
+**
+**  \par Cause:
+**
+**  This event message is issued when the CFS KRPC Task has
+**  received and processed a command.
+**
+*/
+    KRPC_CMD_INF_EID,
+
 /** \brief <tt> This is a count of all the app events and should not be used. </tt> */
 	KRPC_EVT_CNT
 } KRPC_EventIds_t;

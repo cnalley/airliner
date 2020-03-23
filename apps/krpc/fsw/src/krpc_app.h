@@ -55,9 +55,26 @@ extern "C" {
 #include "krpc_events.h"
 #include "krpc_tbldefs.h"
 
+
 /************************************************************************
  ** Local Defines
  *************************************************************************/
+/**
+ * \brief message current value table
+ */
+typedef struct
+{
+    KRPC_TargetPitchAndHeadingCmd_t TargetPitchAndHeadingCmd;
+    KRPC_SetThrottleCmd_t           SetThrottleCmd;
+    KRPC_SasModeCmd_t               SasModeCmd;
+    bool                            EngageRCS;
+    bool                            EngageSAS;
+    bool                            ActivateNextStage;
+    bool                            EngageAutopilot;
+} KRPC_CurrentValueTable_t;
+
+
+
 
 /************************************************************************
  ** Local Structure Definitions
@@ -94,6 +111,7 @@ public:
 
     /** \brief Housekeeping Telemetry for downlink */
     KRPC_HkTlm_t HkTlm;
+
     /************************************************************************/
     /** \brief KRPC (KRPC) application entry point
      **
@@ -308,8 +326,8 @@ private:
     *************************************************************************/
     int32  AcquireConfigPointers(void);
 
-    /* Child task for KRPC data exchange. */
-    static void KRPC_DataExchange_Task(void);
+    /* Child task for KRPC stream. */
+    static void DataStreamTask(void);
     uint32 ChildTaskID;
     uint32 TaskFlags;
     CFE_ES_ChildTaskMainFuncPtr_t   ChildTaskPtr;

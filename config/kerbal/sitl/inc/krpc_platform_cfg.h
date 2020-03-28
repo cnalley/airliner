@@ -46,7 +46,7 @@ extern "C" {
 **       Note, using CFE_SB_PEND_FOREVER may cause an unresponsive
 **       application if no messages arrive on this pipe.
 */
-#define KRPC_SCH_PIPE_PEND_TIME         (2000)
+#define KRPC_SCH_PIPE_PEND_TIME         (20)
 
 /** \brief The number of WAKEUP messages to reserve on the Scheduler pipe.
 **
@@ -107,12 +107,13 @@ extern "C" {
 **  \par Limits:
 **       This parameter must be at least 1000 (ms).
 */
-#define KRPC_STARTUP_TIMEOUT_MSEC    (1000)
+#define KRPC_STARTUP_TIMEOUT_MSEC       (1000)
 
-#define KRPC_CHILD_TASK_NAME         "KRPC_TASK"
-#define KRPC_CHILD_TASK_STACK_SIZE   (32768)
-#define KRPC_CHILD_TASK_PRIORITY     (50)
-#define KRPC_CHILD_TASK_FLAGS        OS_ENABLE_CORE_0
+#define KRPC_CHILD_TASK_NAME            ("KRPC_TASK")
+#define KRPC_CHILD_TASK_STACK_SIZE      (32768)
+#define KRPC_CHILD_TASK_PRIORITY        (50)
+#define KRPC_CHILD_TASK_FLAGS           OS_ENABLE_CORE_0
+#define KRPC_DATA_STREAM_TASK_RATE_US   (20000)
 
 #ifdef __cplusplus
 }

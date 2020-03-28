@@ -30,7 +30,7 @@ extern "C" {
 **  \par Limits:
 **       minimum of 1, max of CFE_SB_MAX_PIPE_DEPTH.
 */
-#define GNC_SCH_PIPE_DEPTH             (2)
+#define GNC_SCH_PIPE_DEPTH             (8)
 
 /** \brief Pipe name for the Scheduler pipe 
 **
@@ -47,7 +47,7 @@ extern "C" {
 **       Note, using CFE_SB_PEND_FOREVER may cause an unresponsive
 **       application if no messages arrive on this pipe.
 */
-#define GNC_SCH_PIPE_PEND_TIME         (2000)
+#define GNC_SCH_PIPE_PEND_TIME         (40)
 
 /** \brief The number of WAKEUP messages to reserve on the Scheduler pipe.
 **
@@ -66,6 +66,10 @@ extern "C" {
 **       must be less than GNC_SCH_PIPE_DEPTH.
 */
 #define GNC_SCH_PIPE_SEND_HK_RESERVED  (1)
+
+#define GNC_SCH_PIPE_ALTITUDE_TLM_RESERVED   (1)
+#define GNC_SCH_PIPE_APOAPSIS_TLM_RESERVED   (1)
+#define GNC_SCH_PIPE_SOLID_FUEL_TLM_RESERVED (1)
 
 /** \brief Pipe depth for the command pipe
 **

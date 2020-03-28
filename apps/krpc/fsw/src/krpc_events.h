@@ -262,9 +262,10 @@ typedef enum {
 **
 */
     KRPC_CMD_INF_EID,
+    KRPC_INIT_ERR_EID,
 
 /** \brief <tt> This is a count of all the app events and should not be used. </tt> */
-	KRPC_EVT_CNT
+    KRPC_EVT_CNT
 } KRPC_EventIds_t;
 
 

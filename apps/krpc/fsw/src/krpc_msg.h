@@ -46,7 +46,7 @@ extern "C" {
 #endif
 
 #include "cfe.h"
-
+#include "krpc_lib.h"
 
 /************************************************************************
 ** Local Defines
@@ -121,17 +121,6 @@ extern "C" {
 */
 #define KRPC_RESET_CC                (1)
 
-#define KRPC_ENGAGE_RCS_CC           (2)
-
-#define KRPC_DISENGAGE_RCS_CC        (3)
-
-#define KRPC_ENGAGE_SAS_CC           (4)
-
-#define KRPC_DISENGAGE_SAS_CC        (5)
-
-#define KRPC_ACTIVATE_NEXT_STAGE_CC  (6)
-
-#define KRPC_ENGAGE_AUTOPILOT_CC     (7)
 
 /************************************************************************
 ** Local Structure Declarations
@@ -146,27 +135,6 @@ typedef struct
 {
     uint8  ucCmdHeader[CFE_SB_CMD_HDR_SIZE];
 } KRPC_NoArgCmd_t;
-
-
-typedef struct
-{
-    uint8  ucCmdHeader[CFE_SB_CMD_HDR_SIZE];
-    float  TargetPitch;
-    float  TargetHeading;
-} KRPC_TargetPitchAndHeadingCmd_t;
-
-typedef struct
-{
-    uint8  ucCmdHeader[CFE_SB_CMD_HDR_SIZE];
-    uint8  Mode;
-} KRPC_SasModeCmd_t;
-
-
-typedef struct
-{
-    uint8  ucCmdHeader[CFE_SB_CMD_HDR_SIZE];
-    float  Throttle;
-} KRPC_SetThrottleCmd_t;
 
 
 /** 
@@ -186,128 +154,6 @@ typedef struct
     uint8              usCmdErrCnt; 
 
 } KRPC_HkTlm_t;
-
-/** 
-**  \brief KRPC mean altitude ASL from center of mass.
-*/
-typedef struct
-{
-    /** \brief cFE SB Tlm Msg Hdr */
-    uint8              TlmHeader[CFE_SB_TLM_HDR_SIZE];
-    /** \brief Altitude. */
-    double              Altitude;   
-} KRPC_MeanAltitudeTlm_t;
-
-
-/** 
-**  \brief KRPC rotation quaternion.
-*/
-typedef struct
-{
-    /** \brief cFE SB Tlm Msg Hdr */
-    uint8              TlmHeader[CFE_SB_TLM_HDR_SIZE];
-    struct
-    {
-        /** \brief X. */
-        double             X;   
-        /** \brief Y. */
-        double             Y;
-        /** \brief Z. */
-        double             Z;
-        /** \brief W. */
-        double             W;
-    } Rotation;
-} KRPC_RotationTlm_t;
-
-
-/** 
-**  \brief KRPC velocity in the given reference frame.
-*/
-typedef struct
-{
-    /** \brief cFE SB Tlm Msg Hdr */
-    uint8              TlmHeader[CFE_SB_TLM_HDR_SIZE];
-    struct
-    {
-        /** \brief X. */
-        double             X;   
-        /** \brief Y. */
-        double             Y;
-        /** \brief Z. */
-        double             Z;
-    } Velocity;
-} KRPC_VelocityTlm_t;
-
-
-/** 
-**  \brief KRPC mission elapsed time.
-*/
-typedef struct
-{
-    /** \brief cFE SB Tlm Msg Hdr */
-    uint8              TlmHeader[CFE_SB_TLM_HDR_SIZE];
-    /** \brief elapsed time in seconds. */
-    double             Met;   
-} KRPC_MetTlm_t;
-
-
-/** 
-**  \brief KRPC universal time.
-*/
-typedef struct
-{
-    /** \brief cFE SB Tlm Msg Hdr */
-    uint8              TlmHeader[CFE_SB_TLM_HDR_SIZE];
-    /** \brief elapsed time in seconds. */
-    double             Ut;   
-} KRPC_UtTlm_t;
-
-
-/** 
-**  \brief KRPC G force acting on the vessel.
-*/
-typedef struct
-{
-    /** \brief cFE SB Tlm Msg Hdr */
-    uint8              TlmHeader[CFE_SB_TLM_HDR_SIZE];
-    /** \brief G force. */
-    float             GForce;   
-} KRPC_GForceTlm_t;
-
-
-/** 
-**  \brief KRPC apoapsis altitude.
-*/
-typedef struct
-{
-    /** \brief cFE SB Tlm Msg Hdr */
-    uint8              TlmHeader[CFE_SB_TLM_HDR_SIZE];
-    /** \brief Apoapsis altitude. */
-    double             ApoapsisAltitude;   
-} KRPC_ApoapsisAltitudeTlm_t;
-
-
-/** 
-**  \brief KRPC periapsis altitude.
-*/
-typedef struct
-{
-    /** \brief cFE SB Tlm Msg Hdr */
-    uint8              TlmHeader[CFE_SB_TLM_HDR_SIZE];
-    /** \brief Periapsis altitude. */
-    double             PeriapsisAltitude;   
-} KRPC_PeriapsisAltitudeTlm_t;
-
-/** 
-**  \brief KRPC solid fuel.
-*/
-typedef struct
-{
-    /** \brief cFE SB Tlm Msg Hdr */
-    uint8              TlmHeader[CFE_SB_TLM_HDR_SIZE];
-    /** \brief Fuel. */
-    double             Fuel;   
-} KRPC_SolidFuelTlm_t;
 
 
 #ifdef __cplusplus

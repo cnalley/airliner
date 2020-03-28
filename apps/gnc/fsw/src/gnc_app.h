@@ -53,6 +53,7 @@
 #include "gnc_events.h"
 #include "gnc_config_utils.h"
 #include "gnc_cds_utils.h"
+#include "krpc_lib.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,11 +62,27 @@ extern "C" {
 /************************************************************************
 ** Local Defines
 *************************************************************************/
-#define GNC_TIMEOUT_MSEC             	(1000)
+#define GNC_TIMEOUT_MSEC                (1000)
 
 /************************************************************************
 ** Local Structure Definitions
 *************************************************************************/
+/**
+ * \brief message current value table
+ */
+typedef struct
+{
+    KRPC_MeanAltitudeTlm_t      KRPC_MeanAltitudeTlm;
+    KRPC_RotationTlm_t          KRPC_RotationTlm;
+    KRPC_VelocityTlm_t          KRPC_VelocityTlm;
+    KRPC_MetTlm_t               KRPC_MetTlm;
+    KRPC_UtTlm_t                KRPC_UtTlm;
+    KRPC_GForceTlm_t            KRPC_GForceTlm;
+    KRPC_ApoapsisAltitudeTlm_t  KRPC_ApoapsisAltitudeTlm;
+    KRPC_PeriapsisAltitudeTlm_t KRPC_PeriapsisAltitudeTlm;
+    KRPC_SolidFuelTlm_t         KRPC_SolidFuelTlm;
+} GNC_CurrentValueTable_t;
+
 /**
 **  \brief GNC Operational Data Structure
 */
@@ -114,6 +131,14 @@ typedef struct
 
     /** \brief Housekeeping Telemetry for downlink */
     GNC_HkTlm_t  HkTlm;
+
+    GNC_NoArgCmd_t NoArgCmd;
+
+    GNC_CurrentValueTable_t CVT;
+
+    KRPC_SetThrottleCmd_t KRPC_SetThrottleCmd;
+    
+    KRPC_TargetPitchAndHeadingCmd_t KRPC_TargetPitchAndHeadingCmd;
 
 } GNC_AppData_t;
 
@@ -338,6 +363,10 @@ void  GNC_SendOutData(void);
 **
 *************************************************************************/
 boolean  GNC_VerifyCmdLength(CFE_SB_Msg_t* MsgPtr, uint16 usExpectedLen);
+
+void GNC_InitState(void);
+
+void GNC_ControlLoop(void);
 
 #ifdef __cplusplus
 }

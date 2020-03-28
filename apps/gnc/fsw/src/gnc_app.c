@@ -39,6 +39,7 @@
 ** Includes
 *************************************************************************/
 #include <string.h>
+#include <math.h>
 
 #include "cfe.h"
 
@@ -158,6 +159,30 @@ int32 GNC_InitPipe()
             goto GNC_InitPipe_Exit_Tag;
         }
 
+        iStatus = CFE_SB_SubscribeEx(KRPC_ALTITUDE_TLM_MID, GNC_AppData.SchPipeId, CFE_SB_Default_Qos, GNC_SCH_PIPE_ALTITUDE_TLM_RESERVED);
+        if (iStatus != CFE_SUCCESS)
+        {
+            (void) CFE_EVS_SendEvent(GNC_INIT_ERR_EID, CFE_EVS_ERROR,
+                                     "CMD Pipe failed to subscribe to KRPC_ALTITUDE_TLM_MID. (0x%08X)",
+                                     (unsigned int)iStatus);
+            goto GNC_InitPipe_Exit_Tag;
+        }
+        iStatus = CFE_SB_SubscribeEx(KRPC_APOAPSIS_TLM_MID, GNC_AppData.SchPipeId, CFE_SB_Default_Qos, GNC_SCH_PIPE_APOAPSIS_TLM_RESERVED);
+        if (iStatus != CFE_SUCCESS)
+        {
+            (void) CFE_EVS_SendEvent(GNC_INIT_ERR_EID, CFE_EVS_ERROR,
+                                     "CMD Pipe failed to subscribe to KRPC_APOAPSIS_TLM_MID. (0x%08X)",
+                                     (unsigned int)iStatus);
+            goto GNC_InitPipe_Exit_Tag;
+        }
+        iStatus = CFE_SB_SubscribeEx(KRPC_SOLID_FUEL_TLM_MID, GNC_AppData.SchPipeId, CFE_SB_Default_Qos, GNC_SCH_PIPE_SOLID_FUEL_TLM_RESERVED);
+        if (iStatus != CFE_SUCCESS)
+        {
+            (void) CFE_EVS_SendEvent(GNC_INIT_ERR_EID, CFE_EVS_ERROR,
+                                     "CMD Pipe failed to subscribe to KRPC_SOLID_FUEL_TLM_MID. (0x%08X)",
+                                     (unsigned int)iStatus);
+            goto GNC_InitPipe_Exit_Tag;
+        }
     }
     else
     {
@@ -227,6 +252,9 @@ int32 GNC_InitData()
 {
     int32  iStatus=CFE_SUCCESS;
 
+    /* Init current value table */
+    CFE_PSP_MemSet((void*)&GNC_AppData, 0x00, sizeof(&GNC_AppData.CVT));
+
     /* Init input data */
     memset((void*)&GNC_AppData.InData, 0x00, sizeof(GNC_AppData.InData));
 
@@ -239,6 +267,19 @@ int32 GNC_InitData()
     memset((void*)&GNC_AppData.HkTlm, 0x00, sizeof(GNC_AppData.HkTlm));
     CFE_SB_InitMsg(&GNC_AppData.HkTlm,
                    GNC_HK_TLM_MID, sizeof(GNC_AppData.HkTlm), TRUE);
+
+    /* Init no arg cmd */
+    CFE_SB_InitMsg(&GNC_AppData.NoArgCmd,
+                   KRPC_CMD_MID, sizeof(GNC_AppData.NoArgCmd), TRUE);
+
+    /* Init target pitch and heading command */
+    CFE_SB_InitMsg(&GNC_AppData.KRPC_TargetPitchAndHeadingCmd,
+                   KRPC_TARGET_PITCH_HEADING_MID, sizeof(GNC_AppData.KRPC_TargetPitchAndHeadingCmd), TRUE);
+
+    /* Init throttle command */
+    CFE_SB_InitMsg(&GNC_AppData.KRPC_SetThrottleCmd,
+                   KRPC_SET_THROTTLE_MID, sizeof(GNC_AppData.KRPC_SetThrottleCmd), TRUE);
+
 
     return (iStatus);
 }
@@ -302,6 +343,9 @@ int32 GNC_InitApp()
         goto GNC_InitApp_Exit_Tag;
     }
 
+    /* Send initial commands to KRPC */
+    GNC_InitState();
+
 GNC_InitApp_Exit_Tag:
     if (iStatus == CFE_SUCCESS)
     {
@@ -353,11 +397,11 @@ int32 GNC_RcvMsg(int32 iBlocking)
     {
         MsgId = CFE_SB_GetMsgId(MsgPtr);
         switch (MsgId)
-	{
+    {
             case GNC_WAKEUP_MID:
                 GNC_ProcessNewCmds();
                 GNC_ProcessNewData();
-
+                GNC_ControlLoop();
                 /* TODO:  Add more code here to handle other things when app wakes up */
 
                 /* The last thing to do at the end of this Wakeup cycle should be to
@@ -368,7 +412,28 @@ int32 GNC_RcvMsg(int32 iBlocking)
             case GNC_SEND_HK_MID:
                 GNC_ReportHousekeeping();
                 break;
+                
+            case KRPC_ALTITUDE_TLM_MID:
+                CFE_PSP_MemCpy(&GNC_AppData.CVT.KRPC_MeanAltitudeTlm, 
+                            MsgPtr, 
+                            sizeof(GNC_AppData.CVT.KRPC_MeanAltitudeTlm));
+                GNC_ControlLoop();
+                break;
 
+            case KRPC_APOAPSIS_TLM_MID:
+            {
+                CFE_PSP_MemCpy(&GNC_AppData.CVT.KRPC_ApoapsisAltitudeTlm, 
+                            MsgPtr, 
+                            sizeof(GNC_AppData.CVT.KRPC_ApoapsisAltitudeTlm));
+                break;
+            }
+            case KRPC_SOLID_FUEL_TLM_MID:
+            {
+                CFE_PSP_MemCpy(&GNC_AppData.CVT.KRPC_SolidFuelTlm, 
+                            MsgPtr, 
+                            sizeof(GNC_AppData.CVT.KRPC_SolidFuelTlm));
+                break;
+            }
             default:
                 (void) CFE_EVS_SendEvent(GNC_MSGID_ERR_EID, CFE_EVS_ERROR,
                                   "Recvd invalid SCH msgId (0x%04X)", (unsigned short)MsgId);
@@ -388,6 +453,8 @@ int32 GNC_RcvMsg(int32 iBlocking)
          * Note, this section is dead code only if the iBlocking arg
          * is CFE_SB_PEND_FOREVER. */
         iStatus = CFE_SUCCESS;
+        GNC_SendOutData();
+        GNC_ControlLoop();
     }
     else
     {
@@ -395,7 +462,7 @@ int32 GNC_RcvMsg(int32 iBlocking)
          * CFE_SB_PIPE_RD_ERROR).
          */
         (void) CFE_EVS_SendEvent(GNC_PIPE_ERR_EID, CFE_EVS_ERROR,
-			  "SB pipe read error (0x%08X), app will exit", (unsigned int)iStatus);
+                "SB pipe read error (0x%08X), app will exit", (unsigned int)iStatus);
         GNC_AppData.uiRunStatus= CFE_ES_APP_ERROR;
     }
 
@@ -582,16 +649,154 @@ void GNC_ReportHousekeeping()
 
 void GNC_SendOutData()
 {
+    int32 iStatus = 0;
     /* TODO:  Add code to update output data, if needed, here.  */
 
     CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&GNC_AppData.OutData);
-    int32 iStatus = CFE_SB_SendMsg((CFE_SB_Msg_t*)&GNC_AppData.OutData);
+    iStatus = CFE_SB_SendMsg((CFE_SB_Msg_t*)&GNC_AppData.OutData);
     if (iStatus != CFE_SUCCESS)
     {
         /* TODO: Decide what to do if the send message fails. */
     }
 }
 
+void GNC_InitState()
+{
+    int32 iStatus = 0;
+    CFE_SB_CmdHdr_t *CmdHdrPtr = (CFE_SB_CmdHdr_t *)&GNC_AppData.NoArgCmd;
+
+    /* Start solid fuel with non-zero value */
+    GNC_AppData.CVT.KRPC_SolidFuelTlm.Fuel = 1.0f;
+
+    /* Set autopilot target pitch and heading. */
+    GNC_AppData.KRPC_TargetPitchAndHeadingCmd.TargetPitch = 90.0f;
+    GNC_AppData.KRPC_TargetPitchAndHeadingCmd.TargetHeading = 90.0f;
+    CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&GNC_AppData.KRPC_TargetPitchAndHeadingCmd);
+    iStatus = CFE_SB_SendMsg((CFE_SB_Msg_t*)&GNC_AppData.KRPC_TargetPitchAndHeadingCmd);
+    if (iStatus != CFE_SUCCESS)
+    {
+        /* TODO: Decide what to do if the send message fails. */
+    }
+
+    /* Engage autopilot */
+    CCSDS_WR_FC(CmdHdrPtr->Sec, KRPC_ENGAGE_AUTOPILOT_CC);
+    CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&GNC_AppData.NoArgCmd);
+    iStatus = CFE_SB_SendMsg((CFE_SB_Msg_t*)&GNC_AppData.NoArgCmd);
+    if (iStatus != CFE_SUCCESS)
+    {
+        /* TODO: Decide what to do if the send message fails. */
+    }
+
+    /* Set throttle 100% */
+    GNC_AppData.KRPC_SetThrottleCmd.Throttle = 1.0f;
+    CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&GNC_AppData.KRPC_SetThrottleCmd);
+    iStatus = CFE_SB_SendMsg((CFE_SB_Msg_t*)&GNC_AppData.KRPC_SetThrottleCmd);
+    if (iStatus != CFE_SUCCESS)
+    {
+        /* TODO: Decide what to do if the send message fails. */
+    }
+}
+
+void GNC_ControlLoop()
+{
+    const float turn_start_altitude = 250.0f;
+    const float turn_end_altitude   = 45000.0f;
+    const float target_altitude     = 150000.0f;
+    const float targeting_altitude  = 50000.0f;
+    static double turn_angle = 0.0f;
+    static double burn_time = 0.0f;
+    static double burn_ut = 0.0f;
+    static double remaining_burn_time = 0.0f;
+    static boolean once = FALSE;
+    static boolean srbs_separated = FALSE;
+    static int countDown = 100;
+
+    /* Current altitude */
+    float altitude = GNC_AppData.CVT.KRPC_MeanAltitudeTlm.Altitude;
+    float apoapsis = GNC_AppData.CVT.KRPC_ApoapsisAltitudeTlm.ApoapsisAltitude;
+
+    /* Countdown to launch */
+    countDown--;
+
+    /* Launch */
+    if(FALSE == once && 0 == countDown)
+    {
+        int32 iStatus = 0;
+        CFE_SB_CmdHdr_t *CmdHdrPtr = (CFE_SB_CmdHdr_t *)&GNC_AppData.NoArgCmd;
+        /* Activate next stage */
+        CCSDS_WR_FC(CmdHdrPtr->Sec, KRPC_ACTIVATE_NEXT_STAGE_CC);
+        CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&GNC_AppData.NoArgCmd);
+        iStatus = CFE_SB_SendMsg((CFE_SB_Msg_t*)&GNC_AppData.NoArgCmd);
+        if (iStatus != CFE_SUCCESS)
+        {
+            /* TODO: Decide what to do if the send message fails. */
+        }
+        once = TRUE;
+    }
+
+    /* Gravity turn */
+    if (altitude > turn_start_altitude && altitude < turn_end_altitude)
+    {
+        double frac = (altitude - turn_start_altitude)
+                    / (turn_end_altitude - turn_start_altitude);
+        double new_turn_angle = frac * 90.0;
+        if (fabs(new_turn_angle - turn_angle) > 0.5)
+        {
+            turn_angle = new_turn_angle;
+            GNC_AppData.KRPC_TargetPitchAndHeadingCmd.TargetPitch = 90.0f - turn_angle;
+            GNC_AppData.KRPC_TargetPitchAndHeadingCmd.TargetHeading = 90.0f;
+            CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&GNC_AppData.KRPC_TargetPitchAndHeadingCmd);
+            (void) CFE_SB_SendMsg((CFE_SB_Msg_t*)&GNC_AppData.KRPC_TargetPitchAndHeadingCmd);
+        }
+    }
+
+    /* Separate SRBs when finished */
+    if (!srbs_separated)
+    {
+        if (GNC_AppData.CVT.KRPC_SolidFuelTlm.Fuel < 0.1)
+        {
+            int32 iStatus = 0;
+            CFE_SB_CmdHdr_t *CmdHdrPtr = (CFE_SB_CmdHdr_t *)&GNC_AppData.NoArgCmd;
+            /* Activate next stage */
+            CCSDS_WR_FC(CmdHdrPtr->Sec, KRPC_ACTIVATE_NEXT_STAGE_CC);
+            CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&GNC_AppData.NoArgCmd);
+            iStatus = CFE_SB_SendMsg((CFE_SB_Msg_t*)&GNC_AppData.NoArgCmd);
+            if (iStatus != CFE_SUCCESS)
+            {
+                /* TODO: Decide what to do if the send message fails. */
+            }
+            srbs_separated = TRUE;
+        }
+    }
+    
+    /* Decrease throttle when approaching target apoapsis */
+    if (apoapsis > target_altitude * 0.9)
+    {
+        int32 iStatus = 0;
+        /* Set throttle 25% */
+        GNC_AppData.KRPC_SetThrottleCmd.Throttle = 0.25f;
+        CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&GNC_AppData.KRPC_SetThrottleCmd);
+        iStatus = CFE_SB_SendMsg((CFE_SB_Msg_t*)&GNC_AppData.KRPC_SetThrottleCmd);
+        if (iStatus != CFE_SUCCESS)
+        {
+            /* TODO: Decide what to do if the send message fails. */
+        }
+    }
+    
+    /* Disable engines when target apoapsis is reached */
+    if (apoapsis >= target_altitude)
+    {
+        int32 iStatus = 0;
+        /* Set throttle 0% */
+        GNC_AppData.KRPC_SetThrottleCmd.Throttle = 0.0f;
+        CFE_SB_TimeStampMsg((CFE_SB_Msg_t*)&GNC_AppData.KRPC_SetThrottleCmd);
+        iStatus = CFE_SB_SendMsg((CFE_SB_Msg_t*)&GNC_AppData.KRPC_SetThrottleCmd);
+        if (iStatus != CFE_SUCCESS)
+        {
+            /* TODO: Decide what to do if the send message fails. */
+        }
+    }
+}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */

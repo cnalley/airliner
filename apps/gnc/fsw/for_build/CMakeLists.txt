@@ -41,6 +41,7 @@ add_airliner_app_def(gnc
    
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../krpc/fsw/public_inc/
 
     USER_DOCS   ${CMAKE_CURRENT_SOURCE_DIR}/user_doxy.in
     DESIGN_DOCS ${CMAKE_CURRENT_SOURCE_DIR}/detail_doxy.in
@@ -71,6 +72,7 @@ add_airliner_app_unit_test(GNC-UT
     INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../krpc/fsw/public_inc/
 
     VALGRIND_SUPPRESSION_FILE
         ${CMAKE_CURRENT_SOURCE_DIR}/../unit_test/valgrind.supp

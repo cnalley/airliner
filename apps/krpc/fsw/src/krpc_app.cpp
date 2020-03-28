@@ -121,11 +121,34 @@ int32 KRPC::InitPipe()
     {
         /* Subscribe to command messages */
         iStatus = CFE_SB_Subscribe(KRPC_CMD_MID, CmdPipeId);
-
         if (iStatus != CFE_SUCCESS)
         {
             (void) CFE_EVS_SendEvent(KRPC_SUBSCRIBE_ERR_EID, CFE_EVS_ERROR,
                 "CMD Pipe failed to subscribe to KRPC_CMD_MID. (0x%08lX)",
+                iStatus);
+            goto KRPC_InitPipe_Exit_Tag;
+        }
+        iStatus = CFE_SB_Subscribe(KRPC_TARGET_PITCH_HEADING_MID, CmdPipeId);
+        if (iStatus != CFE_SUCCESS)
+        {
+            (void) CFE_EVS_SendEvent(KRPC_SUBSCRIBE_ERR_EID, CFE_EVS_ERROR,
+                "CMD Pipe failed to subscribe to KRPC_TARGET_PITCH_HEADING_MID. (0x%08lX)",
+                iStatus);
+            goto KRPC_InitPipe_Exit_Tag;
+        }
+        iStatus = CFE_SB_Subscribe(KRPC_SET_THROTTLE_MID, CmdPipeId);
+        if (iStatus != CFE_SUCCESS)
+        {
+            (void) CFE_EVS_SendEvent(KRPC_SUBSCRIBE_ERR_EID, CFE_EVS_ERROR,
+                "CMD Pipe failed to subscribe to KRPC_SET_THROTTLE_MID. (0x%08lX)",
+                iStatus);
+            goto KRPC_InitPipe_Exit_Tag;
+        }
+        iStatus = CFE_SB_Subscribe(KRPC_SAS_MODE_MID, CmdPipeId);
+        if (iStatus != CFE_SUCCESS)
+        {
+            (void) CFE_EVS_SendEvent(KRPC_SUBSCRIBE_ERR_EID, CFE_EVS_ERROR,
+                "CMD Pipe failed to subscribe to KRPC_SAS_MODE_MID. (0x%08lX)",
                 iStatus);
             goto KRPC_InitPipe_Exit_Tag;
         }
@@ -260,11 +283,10 @@ int32 KRPC::RcvSchPipeMsg(int32 iBlocking)
         switch (MsgId)
         {
             case KRPC_WAKEUP_MID:
-                /* TODO:  Do something here. */
+                ProcessCmdPipe();
                 break;
 
             case KRPC_SEND_HK_MID:
-                ProcessCmdPipe();
                 ReportHousekeeping();
                 break;
 
@@ -286,6 +308,8 @@ int32 KRPC::RcvSchPipeMsg(int32 iBlocking)
          * iBlocking arg, you can do something here, or nothing.  
          * Note, this section is dead code only if the iBlocking arg
          * is CFE_SB_PEND_FOREVER. */
+        ProcessCmdPipe();
+        ReportHousekeeping();
         iStatus = CFE_SUCCESS;
     }
     else
@@ -414,8 +438,6 @@ void KRPC::ProcessAppCmds(CFE_SB_Msg_t* MsgPtr)
                 OS_MutSemTake(MutexCVT);
                 CVT.EngageRCS = true;
                 OS_MutSemGive(MutexCVT);
-                (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
-                                  "RCS activated.");
                 HkTlm.usCmdCnt++;
                 break;
             }
@@ -434,8 +456,6 @@ void KRPC::ProcessAppCmds(CFE_SB_Msg_t* MsgPtr)
                 OS_MutSemTake(MutexCVT);
                 CVT.EngageSAS = true;
                 OS_MutSemGive(MutexCVT);
-                (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
-                                  "SAS activated.");
                 HkTlm.usCmdCnt++;
                 break;
             }
@@ -454,8 +474,6 @@ void KRPC::ProcessAppCmds(CFE_SB_Msg_t* MsgPtr)
                 OS_MutSemTake(MutexCVT);
                 CVT.ActivateNextStage = true;
                 OS_MutSemGive(MutexCVT);
-                (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
-                                  "Next stage activated.");
                 HkTlm.usCmdCnt++;
                 break;
             }
@@ -464,8 +482,6 @@ void KRPC::ProcessAppCmds(CFE_SB_Msg_t* MsgPtr)
                 OS_MutSemTake(MutexCVT);
                 CVT.EngageAutopilot = true;
                 OS_MutSemGive(MutexCVT);
-                (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
-                                  "Autopilot activated.");
                 HkTlm.usCmdCnt++;
                 break;
             }
@@ -712,18 +728,24 @@ void KRPC::DataStreamTask(void)
         {
             vessel.control().set_rcs(CVT.EngageRCS);
             CmdState.EngageRCS = CVT.EngageRCS;
+            (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
+                    "RCS activated.");
         }
         /* SAS state */
         if(CVT.EngageSAS != CmdState.EngageSAS)
         {
             vessel.control().set_sas(CVT.EngageSAS);
             CmdState.EngageSAS = CVT.EngageSAS;
+            (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
+                    "SAS activated.");
         }
         /* Next stage */
         if(true == CVT.ActivateNextStage)
         {
             vessel.control().activate_next_stage();
             CVT.ActivateNextStage = false;
+            (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
+                    "Next stage activated.");
         }
         /* Autopilot */
         if(CVT.EngageAutopilot != CmdState.EngageAutopilot)
@@ -731,6 +753,8 @@ void KRPC::DataStreamTask(void)
             if(true == CVT.EngageAutopilot)
             {
                 vessel.auto_pilot().engage();
+                (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
+                        "Autopilot activated.");
             }
             else
             {
@@ -752,12 +776,19 @@ void KRPC::DataStreamTask(void)
             CVT.TargetPitchAndHeadingCmd.TargetPitch;
             CmdState.TargetPitchAndHeadingCmd.TargetHeading =
             CVT.TargetPitchAndHeadingCmd.TargetHeading;
+            (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
+                        "Autopilot target pitch and header %0.1f:%0.1f.",
+                        CmdState.TargetPitchAndHeadingCmd.TargetPitch,
+                        CmdState.TargetPitchAndHeadingCmd.TargetHeading);
         }
         /* Throttle */
         if(CVT.SetThrottleCmd.Throttle != CmdState.SetThrottleCmd.Throttle)
         {
             vessel.control().set_throttle(CVT.SetThrottleCmd.Throttle);
             CmdState.SetThrottleCmd.Throttle = CVT.SetThrottleCmd.Throttle;
+            (void) CFE_EVS_SendEvent(KRPC_CMD_INF_EID, CFE_EVS_INFORMATION,
+                        "Throttle set to %0.1f.",
+                        CmdState.SetThrottleCmd.Throttle);
         }
         /* SAS mode */
         if(CVT.SasModeCmd.Mode != CmdState.SasModeCmd.Mode)
@@ -770,7 +801,7 @@ void KRPC::DataStreamTask(void)
         OS_MutSemGive(MutexCVT);
 
         /* 50 Hz */
-        usleep(20000);
+        usleep(KRPC_DATA_STREAM_TASK_RATE_US);
     }
 
     CFE_ES_ExitChildTask();
